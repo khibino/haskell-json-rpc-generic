@@ -9,6 +9,8 @@ module Data.JsonRpc.Generic (
 
 import GHC.Generics
 import Control.Applicative ((<$>), (<*>), empty)
+import Control.Monad.Trans.Class (lift)
+import Control.Monad.Trans.State (StateT, evalStateT, get, put)
 import Data.Aeson.Types
   (FromJSON (..), ToJSON (..), GFromJSON, genericParseJSON, Parser, Options, Value (..))
 import Data.Vector (Vector)
@@ -16,28 +18,30 @@ import qualified Data.Vector as Vector
 
 
 class GFromArrayJSON f where
-  gFromArrayJSON :: [Value] -> Parser (f a)
+  gFromArrayJSON :: StateT [Value] Parser (f a)
 
 instance GFromArrayJSON U1 where
-  gFromArrayJSON _  =  return U1
+  gFromArrayJSON  =  return U1
 
 instance (GFromArrayJSON a, GFromArrayJSON b) => GFromArrayJSON (a :*: b) where
-  gFromArrayJSON (v:vs)  =  (:*:) <$> gFromArrayJSON [v]    <*> gFromArrayJSON vs
-  gFromArrayJSON  []     =  (:*:) <$> gFromArrayJSON [Null] <*> gFromArrayJSON []
+  gFromArrayJSON  =  (:*:) <$> gFromArrayJSON <*> gFromArrayJSON
 
 instance GFromArrayJSON a => GFromArrayJSON (M1 i c a) where
-  gFromArrayJSON vs  =  M1 <$> gFromArrayJSON vs
+  gFromArrayJSON  =  M1 <$> gFromArrayJSON
 
 instance FromJSON a => GFromArrayJSON (K1 i a) where
-  gFromArrayJSON (_:_:_) =  empty
-  gFromArrayJSON [v]     =  K1 <$> parseJSON v
-  gFromArrayJSON []      =  K1 <$> parseJSON Null
+  gFromArrayJSON  =  do
+    vs'  <-  get
+    K1 <$> case vs' of
+     v:vs  ->  put vs >> (lift $ parseJSON v)
+     []    ->             lift $ parseJSON Null
 
 
 genericParseJSONRPC :: (Generic a, GFromJSON (Rep a), GFromArrayJSON (Rep a))
                     => Options -> Value -> Parser a
 genericParseJSONRPC opt = d where
-  d (Array vs)      =  to <$> gFromArrayJSON (Vector.toList vs)
+  d (Array vs)      =  (to <$>) . evalStateT gFromArrayJSON $ Vector.toList vs
+                       -- check state to check too many arguments
   d v@(Object _)    =  genericParseJSON opt v
   d _               =  empty
 
