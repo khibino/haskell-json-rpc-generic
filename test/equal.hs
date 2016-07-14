@@ -31,7 +31,6 @@ data Foo =
 instance FromJSON Foo where
   parseJSON = genericParseJSONRPC Aeson.defaultOptions
 
-
 eqDecode0 :: Bool
 eqDecode0 =
   Aeson.decode
@@ -57,23 +56,23 @@ eqDecode1 =
 exId :: Id
 exId = fromMaybe (error "something wrong: _success") $ numberId 25
 
-exSuccess :: Success String
-exSuccess = success exId ("World!" :: String)
+exSuccess :: Success Foo
+exSuccess = success exId Foo {foo = 234, bar = "Hello", baz = [5,6,7,8]}
 
 exFailure :: Failure String
 exFailure = failure (Just exId) Failure.InvalidRequest Nothing
 
 eqResponseS :: Bool
 eqResponseS =
-  Aeson.encode (Response $ Right exSuccess :: Response String String)
+  Just (Response $ Right exSuccess :: Response String Foo)
   ==
-  "{\"result\":\"World!\",\"jsonrpc\":\"2.0\",\"id\":25}"
+  Aeson.decode "{\"result\":{ \"bar\": \"Hello\", \"foo\": 234, \"baz\": [5, 6, 7, 8] },\"jsonrpc\":\"2.0\",\"id\":25}"
 
 eqResponseF :: Bool
 eqResponseF =
-  Aeson.encode (Response $ Left exFailure :: Response String String)
+  Just (Response $ Left exFailure :: Response String Foo)
   ==
-  "{\"error\":{\"code\":-32600,\"message\":\"Invalid Request\"},\"jsonrpc\":\"2.0\",\"id\":25}"
+  Aeson.decode "{\"error\":{\"code\":-32600,\"message\":\"Invalid Request\"},\"jsonrpc\":\"2.0\",\"id\":25}"
 
 main :: IO ()
 main =
