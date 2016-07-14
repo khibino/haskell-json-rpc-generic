@@ -34,7 +34,7 @@ library
                        DeriveFunctor
                        DeriveFoldable
                        DeriveTraversable
-                       DeriveGeneric
+                       -- DeriveGeneric  -- compat with Cabal 1.16
                        StandaloneDeriving
 
   build-depends:         base >=4.6 && <5
