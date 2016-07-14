@@ -5,7 +5,7 @@
 module Data.JsonRpc.Instances () where
 
 import GHC.Generics (Generic)
-import Control.Applicative (pure)
+import Control.Applicative ((<$>), pure, (<|>))
 import Data.Maybe (fromMaybe)
 import Data.List (stripPrefix)
 import Data.Aeson (FromJSON (..), genericParseJSON, ToJSON (..), genericToJSON, Value(..))
@@ -53,11 +53,21 @@ instance ToJSON a => ToJSON (Success a) where
 deriving instance Generic (Error e)
 deriving instance Generic (Failure e)
 
+instance FromJSON e => FromJSON (Error e) where
+  parseJSON = genericParseJSON customOptions
+
 instance ToJSON e => ToJSON (Error e) where
   toJSON = genericToJSON customOptions { omitNothingFields  =  True }
 
+instance FromJSON e => FromJSON (Failure e) where
+  parseJSON = genericParseJSON customOptions
+
 instance ToJSON e => ToJSON (Failure e) where
   toJSON = genericToJSON customOptions
+
+instance (FromJSON e, FromJSON a) => FromJSON (Response e a) where
+  parseJSON v = Response <$> (Right <$> parseJSON v <|>
+                              Left  <$> parseJSON v)
 
 instance (ToJSON e, ToJSON a) => ToJSON (Response e a) where
   toJSON (Response r) = case r of
