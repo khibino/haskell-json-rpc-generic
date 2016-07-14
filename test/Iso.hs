@@ -5,8 +5,7 @@ import Test.QuickCheck.Simple (Test, qcTest)
 import Data.Aeson (FromJSON, ToJSON)
 import qualified Data.Aeson as Aeson
 
-import Data.JsonRpc.Response (Response)
-import Data.JsonRpc.Instances ()
+import Data.JsonRpc (Response)
 
 import Instances (Example (..))
 

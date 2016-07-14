@@ -12,12 +12,12 @@ import qualified Data.Text as T
 import Data.Aeson (FromJSON, ToJSON)
 import qualified Data.Aeson.Types as Aeson
 
-import Data.JsonRpc.Id (Id(..))
-import Data.JsonRpc.Request (Request (..), request)
-import Data.JsonRpc.Success (Success (..), success)
-import Data.JsonRpc.Failure (Failure (..), Error (..), ErrorStatus (..), failure, makeError)
-import Data.JsonRpc.Response (Response (..))
-import Data.JsonRpc.Generic (genericParseJSONRPC)
+import Data.JsonRpc
+  (Id(..), Request (..), request,
+   Success (..), success,
+   Failure (..), Error (..), ErrorStatus (..), failure, makeError,
+   Response (..),
+   genericParseJSONRPC, )
 
 
 genText :: Gen Text

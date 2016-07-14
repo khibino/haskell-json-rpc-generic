@@ -13,14 +13,11 @@ import Data.Aeson (FromJSON)
 import qualified Data.Aeson as Aeson
 import qualified Data.Aeson.Types as Aeson
 
-import Data.JsonRpc.Id (Id(..), numberId)
-import Data.JsonRpc.Request (Request (..))
-import Data.JsonRpc.Success (Success, success)
-import Data.JsonRpc.Failure (Failure, failure)
-import Data.JsonRpc.Response (Response (..))
+import Data.JsonRpc
+  (Id(..), numberId, Request (..),
+   Success, success, Failure, failure, Response (..),
+  genericParseJSONRPC)
 import qualified Data.JsonRpc.Failure as Failure
-import Data.JsonRpc.Instances ()
-import Data.JsonRpc.Generic (genericParseJSONRPC)
 
 
 data Foo =
