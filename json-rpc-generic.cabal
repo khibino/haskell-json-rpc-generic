@@ -59,3 +59,11 @@ test-suite equalTest
   hs-source-dirs:      test
   ghc-options:         -Wall
   default-language:    Haskell2010
+
+source-repository head
+  type:       git
+  location:   https://github.com/khibino/haskell-json-rpc-generic
+
+source-repository head
+  type:       mercurial
+  location:   https://bitbucket.org/khibino/haskell-json-rpc-generic
