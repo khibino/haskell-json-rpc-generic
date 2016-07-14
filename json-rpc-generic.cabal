@@ -26,6 +26,8 @@ library
                        Data.JsonRpc.Response
                        Data.JsonRpc.Generic
                        Data.JsonRpc.Instances
+
+                       Data.JsonRpc
   -- other-modules:
   other-extensions:
                        TypeOperators
