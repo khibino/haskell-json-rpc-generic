@@ -1,7 +1,7 @@
 name:                json-rpc-generic
 version:             0.0.1.0
--- synopsis:
--- description:
+synopsis:            Generic encoder and decode for JSON-RPC
+description:         This package contains generic encoder and decode for JSON-RPC
 homepage:            http://github.com/khibino/haskell-json-rpc-generic
 license:             BSD3
 license-file:        LICENSE
@@ -12,6 +12,10 @@ category:            Network
 build-type:          Simple
 -- extra-source-files:
 cabal-version:       >=1.10
+tested-with:           GHC == 8.0.1
+                     , GHC == 7.10.1, GHC == 7.10.2, GHC == 7.10.3
+                     , GHC == 7.8.1, GHC == 7.8.2, GHC == 7.8.3, GHC == 7.8.4
+                     , GHC == 7.6.1, GHC == 7.6.2, GHC == 7.6.3
 
 library
   exposed-modules:
