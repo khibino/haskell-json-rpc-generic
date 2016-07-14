@@ -1,4 +1,4 @@
-module Iso where
+module Iso (tests) where
 
 import Test.QuickCheck.Simple (Test, qcTest)
 

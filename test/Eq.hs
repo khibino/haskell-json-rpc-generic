@@ -1,7 +1,9 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE DeriveGeneric #-}
 
-import Test.QuickCheck.Simple (boolTest, defaultMain)
+module Eq (tests) where
+
+import Test.QuickCheck.Simple (Test, boolTest)
 
 import GHC.Generics (Generic)
 
@@ -74,11 +76,10 @@ eqResponseF =
   ==
   Aeson.decode "{\"error\":{\"code\":-32600,\"message\":\"Invalid Request\"},\"jsonrpc\":\"2.0\",\"id\":25}"
 
-main :: IO ()
-main =
-  defaultMain
-  [ boolTest "decode 0" eqDecode0
-  , boolTest "decode 1" eqDecode1
-  , boolTest "response success" eqResponseS
-  , boolTest "response failure" eqResponseF
+tests :: [Test]
+tests =
+  [ boolTest "eq - decode 0" eqDecode0
+  , boolTest "eq - decode 1" eqDecode1
+  , boolTest "eq - response success" eqResponseS
+  , boolTest "eq - response failure" eqResponseF
   ]

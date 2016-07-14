@@ -54,6 +54,7 @@ test-suite test-main
   other-modules:
                        Instances
                        Iso
+                       Eq
   build-depends:         base <5
                        , aeson
                        , text
