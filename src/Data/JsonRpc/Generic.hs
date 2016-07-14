@@ -8,7 +8,7 @@ module Data.JsonRpc.Generic (
   ) where
 
 import GHC.Generics
-import Control.Applicative ((<$>), (<*>), empty)
+import Control.Applicative ((<$>), (<*>), (<*), empty)
 import Control.Monad.Trans.Class (lift)
 import Control.Monad.Trans.State (StateT, evalStateT, get, put)
 import Data.Aeson.Types
@@ -33,8 +33,8 @@ instance FromJSON a => GFromArrayJSON (K1 i a) where
   gFromArrayJSON  =  do
     vs'  <-  get
     K1 <$> case vs' of
-     v:vs  ->  put vs >> (lift $ parseJSON v)
-     []    ->             lift $ parseJSON Null
+     v:vs  ->  (lift $ parseJSON v)   <* put vs
+     []    ->   lift $ parseJSON Null
 
 
 genericParseJSONRPC :: (Generic a, GFromJSON (Rep a), GFromArrayJSON (Rep a))
