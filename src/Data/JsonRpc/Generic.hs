@@ -128,7 +128,7 @@ data JsonRpcOptions =
 defaultJsonRpcOptions :: JsonRpcOptions
 defaultJsonRpcOptions =
   JsonRpcOptions
-  { allowSpilledArguemnts  =  False
+  { allowSpilledArguemnts  =  True
   , allowNonExistField     =  True
   }
 
