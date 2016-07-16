@@ -17,7 +17,7 @@ import Data.JsonRpc
    Success (..), success,
    Failure (..), Error (..), ErrorStatus (..), failure, makeError,
    Response (..),
-   genericParseJSONRPC, )
+   genericParseJSONRPC, defaultJsonRpcOptions, )
 
 
 genText :: Gen Text
@@ -103,6 +103,6 @@ instance Arbitrary Example where
     <*> arbitrary <*> arbitrary <*> arbitrary
 
 instance FromJSON Example where
-  parseJSON = genericParseJSONRPC Aeson.defaultOptions
+  parseJSON = genericParseJSONRPC defaultJsonRpcOptions Aeson.defaultOptions
 
 instance ToJSON Example

@@ -16,7 +16,7 @@ import qualified Data.Aeson.Types as Aeson
 import Data.JsonRpc
   (Id(..), numberId, Request (..),
    Success, success, Failure, failure, Response (..),
-  genericParseJSONRPC)
+  genericParseJSONRPC, defaultJsonRpcOptions, )
 import qualified Data.JsonRpc.Failure as Failure
 
 
@@ -28,7 +28,7 @@ data Foo =
   } deriving (Eq, Show, Generic)
 
 instance FromJSON Foo where
-  parseJSON = genericParseJSONRPC Aeson.defaultOptions
+  parseJSON = genericParseJSONRPC defaultJsonRpcOptions Aeson.defaultOptions
 
 eqDecode0 :: Bool
 eqDecode0 =

@@ -3,14 +3,16 @@
 
 module Data.JsonRpc.Generic (
   GFromArrayJSON, genericParseJSONRPC,
+  JsonRpcOptions, defaultJsonRpcOptions,
 
   GToArrayJSON, genericToArrayJSON,
   ) where
 
 import GHC.Generics
 import Control.Applicative ((<$>), (<*>), (<*), empty)
+import Control.Monad (when)
 import Control.Monad.Trans.Class (lift)
-import Control.Monad.Trans.State (StateT, evalStateT, get, put)
+import Control.Monad.Trans.State (StateT, runStateT, get, put)
 import Data.Aeson.Types
   (FromJSON (..), ToJSON (..), GFromJSON, genericParseJSON, Parser, Options, Value (..))
 import Data.Vector (Vector)
@@ -37,11 +39,22 @@ instance FromJSON a => GFromArrayJSON (K1 i a) where
      []    ->   lift $ parseJSON Null
 
 
+data JsonRpcOptions =
+  JsonRpcOptions
+  { disallowSpilledArguemnts :: Bool }
+
+defaultJsonRpcOptions :: JsonRpcOptions
+defaultJsonRpcOptions =
+  JsonRpcOptions
+  { disallowSpilledArguemnts = False }
+
 genericParseJSONRPC :: (Generic a, GFromJSON (Rep a), GFromArrayJSON (Rep a))
-                    => Options -> Value -> Parser a
-genericParseJSONRPC opt = d where
-  d (Array vs)      =  (to <$>) . evalStateT gFromArrayJSON $ Vector.toList vs
-                       -- check state to check too many arguments
+                    => JsonRpcOptions -> Options -> Value -> Parser a
+genericParseJSONRPC rpcOpt opt = d where
+  d (Array vs)      =  do (a, s) <- runStateT gFromArrayJSON $ Vector.toList vs
+                          when (disallowSpilledArguemnts rpcOpt && not (null s))
+                            . fail $ "Too many arguments! Spilled arguments: " ++ show s
+                          return $ to a
   d v@(Object _)    =  genericParseJSON opt v
   d _               =  empty
 
