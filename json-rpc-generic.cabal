@@ -41,8 +41,11 @@ library
 
   build-depends:         base >=4.6 && <5
                        , transformers
+                       , containers
+                       , unordered-containers
                        , bytestring >=0.10
                        , text
+                       , dlist
                        , scientific
                        , vector >=0.10
                        , aeson >=0.7

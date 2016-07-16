@@ -1,5 +1,6 @@
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleInstances #-}
 
 module Data.JsonRpc.Generic (
   GFromArrayJSON, genericParseJSONRPC,
@@ -9,10 +10,18 @@ module Data.JsonRpc.Generic (
   ) where
 
 import GHC.Generics
-import Control.Applicative ((<$>), (<*>), (<*), empty)
-import Control.Monad (when)
+import Control.Applicative ((<$>), pure, (<*>), (<*), empty, (<|>))
+import Control.Monad (when, guard)
 import Control.Monad.Trans.Class (lift)
+import Control.Monad.Trans.Writer (Writer, runWriter, tell)
 import Control.Monad.Trans.State (StateT, runStateT, get, put)
+import Data.DList (DList)
+import qualified Data.DList as DList
+import Data.Set ((\\))
+import qualified Data.Set as Set
+import qualified Data.HashMap.Strict as HashMap
+import Data.Text (Text)
+import qualified Data.Text as T
 import Data.Aeson.Types
   (FromJSON (..), ToJSON (..), GFromJSON, genericParseJSON, Parser, Options, Value (..))
 import Data.Vector (Vector)
@@ -38,16 +47,6 @@ instance FromJSON a => GFromArrayJSON (K1 i a) where
      v:vs  ->  (lift $ parseJSON v)   <* put vs
      []    ->   lift $ parseJSON Null
 
-
-data JsonRpcOptions =
-  JsonRpcOptions
-  { disallowSpilledArguemnts :: Bool }
-
-defaultJsonRpcOptions :: JsonRpcOptions
-defaultJsonRpcOptions =
-  JsonRpcOptions
-  { disallowSpilledArguemnts = False }
-
 genericParseJSONRPC :: (Generic a, GFromJSON (Rep a), GFromArrayJSON (Rep a))
                     => JsonRpcOptions -> Options -> Value -> Parser a
 genericParseJSONRPC rpcOpt opt = d where
@@ -57,6 +56,79 @@ genericParseJSONRPC rpcOpt opt = d where
                           return $ to a
   d v@(Object _)    =  genericParseJSON opt v
   d _               =  empty
+
+
+type FieldName = Text
+type FieldsW = Writer (DList FieldName)
+
+class GFieldSetJSON f where
+  gFieldSet :: FieldsW (f a)
+
+instance GFieldSetJSON U1 where
+  gFieldSet = return U1
+
+instance (GFieldSetJSON a, GFieldSetJSON b) => GFieldSetJSON (a :*: b) where
+  gFieldSet  =  do
+    x <- gFieldSet
+    y <- gFieldSet
+    return (x :*: y)
+
+instance GFieldSetJSON a => GFieldSetJSON (D1 c a) where
+  gFieldSet  =  do
+    x <- gFieldSet
+    return $ M1 x
+
+instance GFieldSetJSON a => GFieldSetJSON (C1 c a) where
+  gFieldSet  =  do
+    x  <- gFieldSet
+    return $ M1 x
+
+instance (GFieldSetJSON a, Selector s) => GFieldSetJSON (S1 s a) where
+  gFieldSet  =  do
+    x <- gFieldSet
+    saveQueriedField $ M1 x
+
+saveQueriedField :: (GFieldSetJSON a, Selector s)
+                 => S1 s a p
+                 -> FieldsW (S1 s a p)
+saveQueriedField m1  =  do
+  tell (pure . T.pack $ selName m1)
+  return m1
+
+instance GFieldSetJSON (K1 i a) where
+  gFieldSet  =  return $ K1 undefined
+
+genericFieldSetParseJSON :: (Generic a, GFromJSON (Rep a), GFieldSetJSON (Rep a))
+                         => JsonRpcOptions
+                         -> Options
+                         -> Value
+                         -> Parser a
+genericFieldSetParseJSON = d  where
+  d rpcOpts opts v@(Object m)  =  do
+    let (px, fs)  =  runWriter gFieldSet
+        inv  =  Set.fromList (HashMap.keys m) \\
+                Set.fromList (DList.toList fs)
+    guard (allowNonExistField rpcOpts || Set.null inv)
+      <|> fail ("object has illegal field: " ++ show (Set.toList inv))
+    j  <-  genericParseJSON opts v
+    let _ = from j `asTypeOf` px
+    return j
+  d _       opts v             =
+    genericParseJSON opts v
+
+
+data JsonRpcOptions =
+  JsonRpcOptions
+  { disallowSpilledArguemnts :: Bool
+  , allowNonExistField :: Bool
+  }
+
+defaultJsonRpcOptions :: JsonRpcOptions
+defaultJsonRpcOptions =
+  JsonRpcOptions
+  { disallowSpilledArguemnts = False
+  , allowNonExistField       = True
+  }
 
 
 class GToArrayJSON f where
