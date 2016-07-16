@@ -6,7 +6,7 @@ module Data.JsonRpc.Generic (
   GFromArrayJSON, genericParseJSONRPC,
   GFieldSetJSON, genericFieldSetParseJSON,
 
-  JsonRpcOptions, defaultJsonRpcOptions,
+  JsonRpcOptions (..), defaultJsonRpcOptions,
 
   GToArrayJSON, genericToArrayJSON,
   ) where
