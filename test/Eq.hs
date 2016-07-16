@@ -3,7 +3,7 @@
 
 module Eq (tests) where
 
-import Test.QuickCheck.Simple (Test, boolTest)
+import Test.QuickCheck.Simple (Test, eqTest)
 
 import GHC.Generics (Generic)
 
@@ -30,27 +30,27 @@ data Foo =
 instance FromJSON Foo where
   parseJSON = genericParseJSONRPC defaultJsonRpcOptions Aeson.defaultOptions
 
-eqDecode0 :: Bool
-eqDecode0 =
-  Aeson.decode
-  "{\"jsonrpc\": \"2.0\", \"method\": \"foo\", \"params\": { \"bar\": \"Hello\", \"foo\": 234, \"baz\": [5, 6, 7, 8] }, \"id\": 3}"
-  ==
-  Just (Request { jsonrpc = "2.0"
+eqDecodeO :: Test
+eqDecodeO =
+  eqTest "eq - decode object"
+  (Aeson.decode
+   "{\"jsonrpc\": \"2.0\", \"method\": \"foo\", \"params\": { \"bar\": \"Hello\", \"foo\": 234, \"baz\": [5, 6, 7, 8] }, \"id\": 3}")
+  (Just Request { jsonrpc = "2.0"
                 , method = "foo"
                 , params = Just (Foo {foo = 234, bar = "Hello", baz = [5,6,7,8]})
                 , id = Just (NumberId 3)}
-       )
+  )
 
-eqDecode1 :: Bool
-eqDecode1 =
-  Aeson.decode
-  "{\"jsonrpc\": \"2.0\", \"method\": \"foo\", \"params\": [ 234, \"Hello\", [5, 6, 7, 8] ], \"id\": 3}"
-  ==
-  Just (Request { jsonrpc = "2.0"
+eqDecodeA :: Test
+eqDecodeA =
+  eqTest "eq - decode array"
+  (Aeson.decode
+   "{\"jsonrpc\": \"2.0\", \"method\": \"foo\", \"params\": [ 234, \"Hello\", [5, 6, 7, 8] ], \"id\": 3}")
+  (Just Request { jsonrpc = "2.0"
                 , method = "foo"
                 , params = Just (Foo {foo = 234, bar = "Hello", baz = [5,6,7,8]})
                 , id = Just (NumberId 3)}
-       )
+  )
 
 exId :: Id
 exId = fromMaybe (error "something wrong: _success") $ numberId 25
@@ -61,22 +61,22 @@ exSuccess = success exId Foo {foo = 234, bar = "Hello", baz = [5,6,7,8]}
 exFailure :: Failure String
 exFailure = failure (Just exId) Failure.InvalidRequest Nothing
 
-eqResponseS :: Bool
+eqResponseS :: Test
 eqResponseS =
-  Just (Response $ Right exSuccess :: Response String Foo)
-  ==
-  Aeson.decode "{\"result\":{ \"bar\": \"Hello\", \"foo\": 234, \"baz\": [5, 6, 7, 8] },\"jsonrpc\":\"2.0\",\"id\":25}"
+  eqTest "eq - response success"
+  (Just (Response $ Right exSuccess :: Response String Foo))
+  (Aeson.decode "{\"result\":{ \"bar\": \"Hello\", \"foo\": 234, \"baz\": [5, 6, 7, 8] },\"jsonrpc\":\"2.0\",\"id\":25}")
 
-eqResponseF :: Bool
+eqResponseF :: Test
 eqResponseF =
-  Just (Response $ Left exFailure :: Response String Foo)
-  ==
-  Aeson.decode "{\"error\":{\"code\":-32600,\"message\":\"Invalid Request\"},\"jsonrpc\":\"2.0\",\"id\":25}"
+  eqTest "eq - response failure"
+  (Just (Response $ Left exFailure :: Response String Foo))
+  (Aeson.decode "{\"error\":{\"code\":-32600,\"message\":\"Invalid Request\"},\"jsonrpc\":\"2.0\",\"id\":25}")
 
 tests :: [Test]
 tests =
-  [ boolTest "eq - decode 0" eqDecode0
-  , boolTest "eq - decode 1" eqDecode1
-  , boolTest "eq - response success" eqResponseS
-  , boolTest "eq - response failure" eqResponseF
+  [ eqDecodeO
+  , eqDecodeA
+  , eqResponseS
+  , eqResponseF
   ]
