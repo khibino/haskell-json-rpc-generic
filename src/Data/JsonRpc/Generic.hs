@@ -4,6 +4,8 @@
 
 module Data.JsonRpc.Generic (
   GFromArrayJSON, genericParseJSONRPC,
+  GFieldSetJSON, genericFieldSetParseJSON,
+
   JsonRpcOptions, defaultJsonRpcOptions,
 
   GToArrayJSON, genericToArrayJSON,
@@ -46,16 +48,6 @@ instance FromJSON a => GFromArrayJSON (K1 i a) where
     K1 <$> case vs' of
      v:vs  ->  (lift $ parseJSON v)   <* put vs
      []    ->   lift $ parseJSON Null
-
-genericParseJSONRPC :: (Generic a, GFromJSON (Rep a), GFromArrayJSON (Rep a), GFieldSetJSON (Rep a))
-                    => JsonRpcOptions -> Options -> Value -> Parser a
-genericParseJSONRPC rpcOpt opt = d where
-  d (Array vs)      =  do (a, s) <- runStateT gFromArrayJSON $ Vector.toList vs
-                          when (disallowSpilledArguemnts rpcOpt && not (null s))
-                            . fail $ "Too many arguments! Spilled arguments: " ++ show s
-                          return $ to a
-  d v@(Object _)    =  genericFieldSetParseJSON rpcOpt opt v
-  d _               =  empty
 
 
 type FieldName = Text
@@ -116,6 +108,16 @@ genericFieldSetParseJSON = d  where
   d _       opts v             =
     genericParseJSON opts v
 
+
+genericParseJSONRPC :: (Generic a, GFromJSON (Rep a), GFromArrayJSON (Rep a), GFieldSetJSON (Rep a))
+                    => JsonRpcOptions -> Options -> Value -> Parser a
+genericParseJSONRPC rpcOpt opt = d where
+  d (Array vs)      =  do (a, s) <- runStateT gFromArrayJSON $ Vector.toList vs
+                          when (disallowSpilledArguemnts rpcOpt && not (null s))
+                            . fail $ "Too many arguments! Spilled arguments: " ++ show s
+                          return $ to a
+  d v@(Object _)    =  genericFieldSetParseJSON rpcOpt opt v
+  d _               =  empty
 
 data JsonRpcOptions =
   JsonRpcOptions
