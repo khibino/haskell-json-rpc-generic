@@ -13,7 +13,7 @@ module Data.JsonRpc.Generic (
 
 import GHC.Generics
 import Control.Applicative ((<$>), pure, (<*>), (<*), empty, (<|>))
-import Control.Monad (when, guard)
+import Control.Monad (guard)
 import Control.Monad.Trans.Class (lift)
 import Control.Monad.Trans.Writer (Writer, runWriter, tell)
 import Control.Monad.Trans.State (StateT, runStateT, get, put)
@@ -113,23 +113,23 @@ genericParseJSONRPC :: (Generic a, GFromJSON (Rep a), GFromArrayJSON (Rep a), GF
                     => JsonRpcOptions -> Options -> Value -> Parser a
 genericParseJSONRPC rpcOpt opt = d where
   d (Array vs)      =  do (a, s) <- runStateT gFromArrayJSON $ Vector.toList vs
-                          when (disallowSpilledArguemnts rpcOpt && not (null s))
-                            . fail $ "Too many arguments! Spilled arguments: " ++ show s
+                          guard (allowSpilledArguemnts rpcOpt || null s)
+                            <|> fail ("Too many arguments! Spilled arguments: " ++ show s)
                           return $ to a
   d v@(Object _)    =  genericFieldSetParseJSON rpcOpt opt v
   d _               =  empty
 
 data JsonRpcOptions =
   JsonRpcOptions
-  { disallowSpilledArguemnts :: Bool
-  , allowNonExistField :: Bool
+  { allowSpilledArguemnts  ::  Bool
+  , allowNonExistField     ::  Bool
   }
 
 defaultJsonRpcOptions :: JsonRpcOptions
 defaultJsonRpcOptions =
   JsonRpcOptions
-  { disallowSpilledArguemnts = False
-  , allowNonExistField       = True
+  { allowSpilledArguemnts  =  False
+  , allowNonExistField     =  True
   }
 
 
