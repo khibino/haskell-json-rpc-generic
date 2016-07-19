@@ -47,10 +47,10 @@ genServerError :: Gen ErrorStatus
 genServerError = ServerError <$> choose (-32099, -32000)
 
 genMethodErrorA :: Gen ErrorStatus
-genMethodErrorA = MethodError <$> choose (-31999, 0) <*> genText
+genMethodErrorA = MethodError <$> choose (-31999, 0)
 
 genMethodErrorB :: Gen ErrorStatus
-genMethodErrorB = MethodError <$> choose (-65535, -32769) <*> genText
+genMethodErrorB = MethodError <$> choose (-65535, -32769)
 
 instance Arbitrary ErrorStatus where
   arbitrary =

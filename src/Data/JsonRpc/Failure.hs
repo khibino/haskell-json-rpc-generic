@@ -41,7 +41,7 @@ data ErrorStatus
   | InvalidParams
   | InternalError
   | ServerError !Int
-  | MethodError !Int !Text
+  | MethodError !Int
   deriving (Eq, Show)
 
 failure :: Maybe Id -> ErrorStatus -> Maybe Text -> Maybe e -> Failure e
@@ -56,7 +56,7 @@ defaultMessage = d  where
   d  InvalidParams      =  "Invalid params"
   d  InternalError      =  "Internal error"
   d (ServerError _)     =  "Server error"
-  d (MethodError _ m)   =  m
+  d (MethodError _)     =  "Application method error"
 
 makeError :: ErrorStatus -> Maybe Text -> Maybe e -> Error e
 makeError e mm = d e $ fromMaybe (defaultMessage e) mm    where
@@ -66,7 +66,7 @@ makeError e mm = d e $ fromMaybe (defaultMessage e) mm    where
   d  InvalidParams      =  Error (-32602)
   d  InternalError      =  Error (-32603)
   d (ServerError c)     =  Error       c
-  d (MethodError c _)   =  Error       c
+  d (MethodError c)     =  Error       c
 
 serverError :: MonadPlus m
             => Int
@@ -77,11 +77,10 @@ serverError c = do
 
 methodError :: MonadPlus m
             => Int
-            -> Text
             -> m ErrorStatus
-methodError c s = do
+methodError c = do
   guard $ c < -32768 || -32000 < c
-  return $ MethodError c s
+  return $ MethodError c
 
 emptyError :: Maybe ()
 emptyError = Nothing
