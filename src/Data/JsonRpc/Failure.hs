@@ -12,6 +12,7 @@ module Data.JsonRpc.Failure (
 
 import Prelude hiding (userError)
 import Control.Monad (MonadPlus, guard)
+import Data.Maybe (fromMaybe)
 import Data.Text (Text)
 import Data.Foldable (Foldable)
 import Data.Traversable (Traversable)
@@ -43,19 +44,29 @@ data ErrorStatus
   | MethodError !Int !Text
   deriving (Eq, Show)
 
-failure :: Maybe Id -> ErrorStatus -> Maybe e -> Failure e
-failure mayId s =
-  Failure "2.0" mayId . makeError s
+failure :: Maybe Id -> ErrorStatus -> Maybe Text -> Maybe e -> Failure e
+failure mayId s mm =
+  Failure "2.0" mayId . makeError s mm
 
-makeError :: ErrorStatus -> Maybe e -> Error e
-makeError = d  where
-  d  ParseError         =  Error (-32700) "Parse error"
-  d  InvalidRequest     =  Error (-32600) "Invalid Request"
-  d  MethodNotFound     =  Error (-32601) "Method not found"
-  d  InvalidParams      =  Error (-32602) "Invalid params"
-  d  InternalError      =  Error (-32603) "Internal error"
-  d (ServerError c)     =  Error       c  "Server error"
-  d (MethodError c m)   =  Error       c   m
+defaultMessage :: ErrorStatus -> Text
+defaultMessage = d  where
+  d  ParseError         =  "Parse error"
+  d  InvalidRequest     =  "Invalid Request"
+  d  MethodNotFound     =  "Method not found"
+  d  InvalidParams      =  "Invalid params"
+  d  InternalError      =  "Internal error"
+  d (ServerError _)     =  "Server error"
+  d (MethodError _ m)   =  m
+
+makeError :: ErrorStatus -> Maybe Text -> Maybe e -> Error e
+makeError e mm = d e $ fromMaybe (defaultMessage e) mm    where
+  d  ParseError         =  Error (-32700)
+  d  InvalidRequest     =  Error (-32600)
+  d  MethodNotFound     =  Error (-32601)
+  d  InvalidParams      =  Error (-32602)
+  d  InternalError      =  Error (-32603)
+  d (ServerError c)     =  Error       c
+  d (MethodError c _)   =  Error       c
 
 serverError :: MonadPlus m
             => Int

@@ -65,10 +65,14 @@ instance Arbitrary ErrorStatus where
     , (2, genMethodErrorB)
     ]
 
+genErrorMessage :: Gen (Maybe Text)
+genErrorMessage = frequency [ (1, pure Nothing), (2, Just <$> genText) ]
+
 instance Arbitrary e => Arbitrary (Error e) where
   arbitrary =
     makeError
     <$> arbitrary
+    <*> genErrorMessage
     <*> arbitrary
 
 instance Arbitrary e => Arbitrary (Failure e) where
@@ -76,6 +80,7 @@ instance Arbitrary e => Arbitrary (Failure e) where
     failure
     <$> arbitrary
     <*> arbitrary
+    <*> genErrorMessage
     <*> arbitrary
 
 instance (Arbitrary e, Arbitrary a) => Arbitrary (Response e a) where

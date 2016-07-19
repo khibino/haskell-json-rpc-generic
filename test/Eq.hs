@@ -115,7 +115,7 @@ exSuccess :: Success Foo
 exSuccess = success exId Foo {foo = 234, bar = "Hello", baz = [5,6,7,8]}
 
 exFailure :: Failure String
-exFailure = failure (Just exId) Failure.InvalidRequest Nothing
+exFailure = failure (Just exId) Failure.InvalidRequest Nothing Nothing
 
 eqResponseS :: Test
 eqResponseS =
