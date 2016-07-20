@@ -2,7 +2,8 @@
 {-# LANGUAGE DeriveFunctor, DeriveFoldable, DeriveTraversable #-}
 
 module Data.JsonRpc.Failure (
-  Failure (..), Error (..), ErrorStatus (..),
+  Failure (..), Error (..),
+  ErrorStatus (..), toCode, fromCode,
 
   failure, makeError,
   serverError,
@@ -11,7 +12,7 @@ module Data.JsonRpc.Failure (
   ) where
 
 import Prelude hiding (userError)
-import Control.Monad (MonadPlus, guard)
+import Control.Monad (MonadPlus, mplus, guard)
 import Data.Maybe (fromMaybe)
 import Data.Text (Text)
 import Data.Foldable (Foldable)
@@ -36,6 +37,11 @@ data Error e =
 
 {-
 -- citation from http://www.jsonrpc.org/specification
+--
+-- The error codes from and including -32768 to -32000 are reserved for pre-defined errors.
+-- Any code within this range, but not defined explicitly below is reserved for future use.
+-- The error codes are nearly the same as those suggested for XML-RPC at the following
+-- url: http://xmlrpc-epi.sourceforge.net/specs/rfc.fault_codes.php
 --
 -- code               message            meaning
 -- -32700             Parse error        Invalid JSON was received by the server.
@@ -72,15 +78,27 @@ defaultMessage = d  where
   d (ServerError _)     =  "Server error"
   d (MethodError _)     =  "Application method error"
 
+toCode :: ErrorStatus -> Int
+toCode = d  where
+  d  ParseError         =  -32700
+  d  InvalidRequest     =  -32600
+  d  MethodNotFound     =  -32601
+  d  InvalidParams      =  -32602
+  d  InternalError      =  -32603
+  d (ServerError c)     =       c
+  d (MethodError c)     =       c
+
+fromCode :: MonadPlus m => Int -> m ErrorStatus
+fromCode c
+  | c == -32700  =  return ParseError
+  | c == -32600  =  return InvalidRequest
+  | c == -32601  =  return MethodNotFound
+  | c == -32602  =  return InvalidParams
+  | c == -32603  =  return InternalError
+  | otherwise    =  serverError c `mplus` methodError c
+
 makeError :: ErrorStatus -> Maybe Text -> Maybe e -> Error e
-makeError e mm = d e $ fromMaybe (defaultMessage e) mm    where
-  d  ParseError         =  Error (-32700)
-  d  InvalidRequest     =  Error (-32600)
-  d  MethodNotFound     =  Error (-32601)
-  d  InvalidParams      =  Error (-32602)
-  d  InternalError      =  Error (-32603)
-  d (ServerError c)     =  Error       c
-  d (MethodError c)     =  Error       c
+makeError e = Error (toCode e) . fromMaybe (defaultMessage e)
 
 serverError :: MonadPlus m
             => Int
