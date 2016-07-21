@@ -30,7 +30,7 @@ data Failure e =
 
 data Error e =
   Error
-  { _code    :: !Integer
+  { _code    :: !ErrorStatus
   , _message :: !Text
   , _data    :: !(Maybe e)
   } deriving (Eq, Show, Functor, Foldable, Traversable)
@@ -102,7 +102,7 @@ fromCode c'
     c = toInteger c'
 
 makeError :: ErrorStatus -> Maybe Text -> Maybe e -> Error e
-makeError e = Error (toCode e) . fromMaybe (defaultMessage e)
+makeError e = Error e . fromMaybe (defaultMessage e)
 
 serverError :: (Integral a, MonadPlus m)
             => a
