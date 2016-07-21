@@ -12,10 +12,12 @@ import Data.Aeson (FromJSON (..), genericParseJSON, ToJSON (..), genericToJSON, 
 import Data.Aeson.Types (Options (..))
 import qualified Data.Aeson.Types as Aeson
 
+import Data.JsonRpc.Integral (fromScientific)
 import Data.JsonRpc.Id (Id(..), numberId)
 import Data.JsonRpc.Request (Request (..))
 import Data.JsonRpc.Success (Success (..))
-import Data.JsonRpc.Failure (Failure (..), Error (..))
+import Data.JsonRpc.Failure (Failure (..), Error (..), ErrorStatus (..))
+import qualified Data.JsonRpc.Failure as Failure
 import Data.JsonRpc.Response (Response (..))
 
 
@@ -52,6 +54,21 @@ instance ToJSON a => ToJSON (Success a) where
 
 deriving instance Generic (Error e)
 deriving instance Generic (Failure e)
+
+instance FromJSON ErrorStatus where
+  parseJSON = d  where
+    d (String {})  =  parseError "string is not allowed"
+    d (Number n)   =  do
+      i  <-  fromScientific n  <|>  parseError "not integer number"
+      Failure.fromCode i       <|>  parseError "unknown error code range"
+    d (Object {})  =  parseError "object is not allowed"
+    d (Array  {})  =  parseError "array is not allowed"
+    d (Bool   {})  =  parseError "boolean is not allowed"
+    d  Null        =  parseError "null is not allowed"
+    parseError = fail . ("JSON RPC error code: " ++)
+
+instance ToJSON ErrorStatus where
+  toJSON = Number . fromIntegral . Failure.toCode
 
 instance FromJSON e => FromJSON (Error e) where
   parseJSON = genericParseJSON customOptions
