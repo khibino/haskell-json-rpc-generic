@@ -28,7 +28,9 @@ library
                        Data.JsonRpc.Instances
 
                        Data.JsonRpc
-  -- other-modules:
+  other-modules:
+                       Data.JsonRpc.Integral
+
   other-extensions:
                        TypeOperators
                        FlexibleContexts
