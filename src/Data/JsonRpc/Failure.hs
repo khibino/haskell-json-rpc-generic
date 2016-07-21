@@ -30,7 +30,7 @@ data Failure e =
 
 data Error e =
   Error
-  { _code    :: !Int
+  { _code    :: !Integer
   , _message :: !Text
   , _data    :: !(Maybe e)
   } deriving (Eq, Show, Functor, Foldable, Traversable)
@@ -60,8 +60,8 @@ data ErrorStatus
   | MethodNotFound
   | InvalidParams
   | InternalError
-  | ServerError !Int
-  | MethodError !Int
+  | ServerError !Integer
+  | MethodError !Integer
   deriving (Eq, Show)
 
 failure :: Maybe Id -> ErrorStatus -> Maybe Text -> Maybe e -> Failure e
@@ -78,7 +78,7 @@ defaultMessage = d  where
   d (ServerError _)     =  "Server error"
   d (MethodError _)     =  "Application method error"
 
-toCode :: ErrorStatus -> Int
+toCode :: ErrorStatus -> Integer
 toCode = d  where
   d  ParseError         =  -32700
   d  InvalidRequest     =  -32600
@@ -88,29 +88,35 @@ toCode = d  where
   d (ServerError c)     =       c
   d (MethodError c)     =       c
 
-fromCode :: MonadPlus m => Int -> m ErrorStatus
-fromCode c
+fromCode :: (Integral a, MonadPlus m)
+         => a
+         -> m ErrorStatus
+fromCode c'
   | c == -32700  =  return ParseError
   | c == -32600  =  return InvalidRequest
   | c == -32601  =  return MethodNotFound
   | c == -32602  =  return InvalidParams
   | c == -32603  =  return InternalError
   | otherwise    =  serverError c `mplus` methodError c
+  where
+    c = toInteger c'
 
 makeError :: ErrorStatus -> Maybe Text -> Maybe e -> Error e
 makeError e = Error (toCode e) . fromMaybe (defaultMessage e)
 
-serverError :: MonadPlus m
-            => Int
+serverError :: (Integral a, MonadPlus m)
+            => a
             -> m ErrorStatus
-serverError c = do
+serverError c' = do
+  let c = fromIntegral c'
   guard $ -32099 <= c && c <= -32000
   return $ ServerError c
 
-methodError :: MonadPlus m
-            => Int
+methodError :: (Integral a, MonadPlus m)
+            => a
             -> m ErrorStatus
-methodError c = do
+methodError c' = do
+  let c = fromIntegral c'
   guard $ c < -32768 || -32000 < c
   return $ MethodError c
 
