@@ -6,7 +6,7 @@ import Control.Applicative ((<$>))
 import Data.Aeson (FromJSON, ToJSON)
 import qualified Data.Aeson as Aeson
 
-import Data.JsonRpc (Request, Response, Error, genericToArrayJSON)
+import Data.JsonRpc (Request, Response, Error, ErrorStatus, genericToArrayJSON)
 
 import Instances (Example)
 
@@ -22,6 +22,9 @@ requestA :: Request Example -> Bool
 requestA r =
   Aeson.decode (Aeson.encode $ genericToArrayJSON <$> r) == Just r
 
+errorStatus :: ErrorStatus -> Bool
+errorStatus = aesonED
+
 errorObj :: Error Example -> Bool
 errorObj = aesonED
 
@@ -32,5 +35,6 @@ tests :: [Test]
 tests =
   [ qcTest "iso - request" request
   , qcTest "iso - request array" requestA
+  , qcTest "iso - error status" errorStatus
   , qcTest "iso - error object" errorObj
   , qcTest "iso - response" response ]
