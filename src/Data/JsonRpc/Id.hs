@@ -1,12 +1,12 @@
 
 module Data.JsonRpc.Id (Id(..), numberId) where
 
-import Control.Applicative (Applicative, pure)
-import Control.Monad (MonadPlus, guard)
-
+import Control.Applicative (Applicative, (<$>))
+import Control.Monad (MonadPlus)
 import Data.Text (Text)
-import Data.Scientific (Scientific, toDecimalDigits)
+import Data.Scientific (Scientific)
 
+import Data.JsonRpc.Integral (fromScientific)
 
 {-
 -- citation from http://www.jsonrpc.org/specification
@@ -34,8 +34,4 @@ data Id
   deriving (Eq, Ord, Show, Read)
 
 numberId :: (MonadPlus m, Applicative m) => Scientific -> m Id
-numberId sci = do
-  let (ds, e) = toDecimalDigits sci
-  guard $ sci == 0 || null (drop e ds)  -- test integral
-
-  pure . NumberId $ round sci
+numberId sci = NumberId <$> fromScientific sci
