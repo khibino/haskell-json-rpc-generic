@@ -3,7 +3,7 @@
 
 module Data.JsonRpc.Failure (
   Failure (..), Error (..),
-  ErrorStatus (..), toCode, fromCode,
+  ErrorStatus (..), toCode, fromCode, refineStatus,
 
   failure, makeError,
   serverError,
@@ -100,6 +100,14 @@ fromCode c'
   | otherwise    =  serverError c `mplus` methodError c
   where
     c = toInteger c'
+
+refineStatus :: MonadPlus m
+             => ErrorStatus
+             -> m ErrorStatus
+refineStatus e = do
+  e' <- fromCode $ toCode e
+  guard $ e' == e
+  return e
 
 makeError :: ErrorStatus -> Maybe Text -> Maybe e -> Error e
 makeError e = Error e . fromMaybe (defaultMessage e)
