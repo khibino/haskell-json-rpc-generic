@@ -26,8 +26,8 @@ requestA :: Request Example -> Bool
 requestA r =
   Aeson.decode (Aeson.encode $ genericToArrayJSON <$> r) == Just r
 
-_errorStatus :: ErrorStatus -> Bool
-_errorStatus = aesonED
+errorStatus :: ErrorStatus -> Bool
+errorStatus = aesonED
 
 errorObj :: Error Example -> Bool
 errorObj = aesonED
@@ -38,9 +38,13 @@ response = aesonED
 tests :: [Test]
 tests =
   [ qcTest "iso - error status code"  errorStatusCode
+  ] ++
 
-  , qcTest "iso JSON - request" request
+  [ x
+  | x  <-  [ qcTest "iso JSON - error status" errorStatus ]
+  ,  Aeson.decode (Aeson.encode (1 :: Integer)) == Just (1 :: Integer)
+  ] ++
+  [ qcTest "iso JSON - request" request
   , qcTest "iso JSON - request array" requestA
-  -- , qcTest "iso JSON - error status" errorStatus
   , qcTest "iso JSON - error object" errorObj
   , qcTest "iso JSON - response" response ]
