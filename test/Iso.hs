@@ -7,9 +7,13 @@ import Data.Aeson (FromJSON, ToJSON)
 import qualified Data.Aeson as Aeson
 
 import Data.JsonRpc (Request, Response, Error, ErrorStatus, genericToArrayJSON)
+import qualified Data.JsonRpc.Failure as Error
 
 import Instances (Example)
 
+errorStatusCode :: ErrorStatus -> Bool
+errorStatusCode s =
+ Error.fromCode (Error.toCode s) == Just s
 
 aesonED :: (Eq a, ToJSON a, FromJSON a)
         => a -> Bool
@@ -33,8 +37,10 @@ response = aesonED
 
 tests :: [Test]
 tests =
-  [ qcTest "iso - request" request
-  , qcTest "iso - request array" requestA
-  -- , qcTest "iso - error status" errorStatus
-  , qcTest "iso - error object" errorObj
-  , qcTest "iso - response" response ]
+  [ qcTest "iso - error status code"  errorStatusCode
+
+  , qcTest "iso JSON - request" request
+  , qcTest "iso JSON - request array" requestA
+  -- , qcTest "iso JSON - error status" errorStatus
+  , qcTest "iso JSON - error object" errorObj
+  , qcTest "iso JSON - response" response ]
