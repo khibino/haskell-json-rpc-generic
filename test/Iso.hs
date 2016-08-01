@@ -15,6 +15,10 @@ errorStatusCode :: ErrorStatus -> Bool
 errorStatusCode s =
  Error.fromCode (Error.toCode s) == Just s
 
+refineStatus :: ErrorStatus -> Bool
+refineStatus s =
+  Error.refineStatus s == Just s
+
 aesonED :: (Eq a, ToJSON a, FromJSON a)
         => a -> Bool
 aesonED x = Aeson.decode (Aeson.encode x) == Just x
@@ -38,6 +42,7 @@ response = aesonED
 tests :: [Test]
 tests =
   [ qcTest "iso - error status code"  errorStatusCode
+  , qcTest "iso - refine status"  refineStatus
   ] ++
 
   [ x
