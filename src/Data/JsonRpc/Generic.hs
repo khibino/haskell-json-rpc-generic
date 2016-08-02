@@ -22,10 +22,9 @@ import qualified Data.DList as DList
 import Data.Set ((\\))
 import qualified Data.Set as Set
 import qualified Data.HashMap.Strict as HashMap
-import Data.Text (Text)
 import qualified Data.Text as T
 import Data.Aeson.Types
-  (FromJSON (..), ToJSON (..), GFromJSON, genericParseJSON, Parser, Options, Value (..))
+  (FromJSON (..), ToJSON (..), GFromJSON, genericParseJSON, Parser, Options (..), Value (..))
 import Data.Vector (Vector)
 import qualified Data.Vector as Vector
 
@@ -50,7 +49,7 @@ instance FromJSON a => GFromArrayJSON (K1 i a) where
      []    ->   lift $ parseJSON Null
 
 
-type FieldName = Text
+type FieldName = String
 type FieldsW = Writer (DList FieldName)
 
 class GFieldSetJSON f where
@@ -84,7 +83,7 @@ saveQueriedField :: (GFieldSetJSON a, Selector s)
                  => S1 s a p
                  -> FieldsW (S1 s a p)
 saveQueriedField m1  =  do
-  tell (pure . T.pack $ selName m1)
+  tell (pure $ selName m1)
   return m1
 
 instance GFieldSetJSON (K1 i a) where
@@ -99,7 +98,7 @@ genericFieldSetParseJSON = d  where
   d rpcOpts opts v@(Object m)  =  do
     let (px, fs)  =  runWriter gFieldSet
         inv  =  Set.fromList (HashMap.keys m) \\
-                Set.fromList (DList.toList fs)
+                Set.fromList (map (T.pack . fieldLabelModifier opts) $ DList.toList fs)
     guard (allowNonExistField rpcOpts || Set.null inv)
       <|> fail ("object has illegal field: " ++ show (Set.toList inv))
     j  <-  genericParseJSON opts v
