@@ -1,5 +1,5 @@
 name:                json-rpc-generic
-version:             0.2.1.0
+version:             0.2.1.1
 synopsis:            Generic encoder and decode for JSON-RPC
 description:         This package contains generic encoder and decode for JSON-RPC
 homepage:            http://github.com/khibino/haskell-json-rpc-generic
