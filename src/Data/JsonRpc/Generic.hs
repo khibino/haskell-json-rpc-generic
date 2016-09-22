@@ -25,6 +25,7 @@ import qualified Data.HashMap.Strict as HashMap
 import qualified Data.Text as T
 import Data.Aeson.Types
   (FromJSON (..), ToJSON (..), GFromJSON, genericParseJSON, Parser, Options (..), Value (..))
+import Data.Aeson.Generic.Compat (GFromJSON0)
 import Data.Vector (Vector)
 import qualified Data.Vector as Vector
 
@@ -89,7 +90,7 @@ saveQueriedField m1  =  do
 instance GFieldSetJSON (K1 i a) where
   gFieldSet  =  return $ K1 undefined
 
-genericFieldSetParseJSON :: (Generic a, GFromJSON (Rep a), GFieldSetJSON (Rep a))
+genericFieldSetParseJSON :: (Generic a, GFromJSON0 (Rep a), GFieldSetJSON (Rep a))
                          => JsonRpcOptions
                          -> Options
                          -> Value
@@ -108,7 +109,7 @@ genericFieldSetParseJSON = d  where
     genericParseJSON opts v
 
 
-genericParseJSONRPC :: (Generic a, GFromJSON (Rep a), GFromArrayJSON (Rep a), GFieldSetJSON (Rep a))
+genericParseJSONRPC :: (Generic a, GFromJSON0 (Rep a), GFromArrayJSON (Rep a), GFieldSetJSON (Rep a))
                     => JsonRpcOptions -> Options -> Value -> Parser a
 genericParseJSONRPC rpcOpt opt = d where
   d (Array vs)      =  do (a, s) <- runStateT gFromArrayJSON $ Vector.toList vs
