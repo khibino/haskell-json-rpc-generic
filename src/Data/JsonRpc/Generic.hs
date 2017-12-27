@@ -24,7 +24,7 @@ import qualified Data.Set as Set
 import qualified Data.HashMap.Strict as HashMap
 import qualified Data.Text as T
 import Data.Aeson.Types
-  (FromJSON (..), ToJSON (..), GFromJSON, genericParseJSON, Parser, Options (..), Value (..))
+  (FromJSON (..), ToJSON (..), genericParseJSON, Parser, Options (..), Value (..))
 import Data.Aeson.Generic.Compat (GFromJSON0)
 import Data.Vector (Vector)
 import qualified Data.Vector as Vector
