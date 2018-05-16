@@ -47,7 +47,6 @@ library
                        , transformers
                        , containers
                        , unordered-containers
-                       , bytestring >=0.10
                        , text
                        , dlist
                        , scientific
