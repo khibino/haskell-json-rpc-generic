@@ -3,12 +3,13 @@
 
 module Instances (Example (..)) where
 
-import Test.QuickCheck (Arbitrary (..), Gen, frequency, choose)
+import Test.QuickCheck (Arbitrary (..), Gen, frequency, choose, listOf)
 
 import GHC.Generics (Generic)
 import Control.Applicative ((<$>), pure, (<*>))
 import Data.Text (Text)
 import qualified Data.Text as T
+import qualified Data.Text.Encoding as T
 import Data.Aeson (FromJSON, ToJSON)
 import qualified Data.Aeson.Types as Aeson
 
@@ -20,14 +21,25 @@ import Data.JsonRpc
    genericParseJSONRPC, defaultJsonRpcOptions, )
 
 
+{- decoder of some text versions are COMPLETELY BROKEN !!
+   only 7bit cases are working -}
+genString :: Gen String
+genString
+  | good       =  arbitrary
+  | otherwise  =  gen7bits
+  where
+    x = T.pack "\128"
+    good = T.decodeUtf8' (T.encodeUtf8 x) == Right x
+    gen7bits = listOf $ choose ('\000', '\127')
+
 genText :: Gen Text
-genText = T.pack <$> arbitrary
+genText = T.pack <$> genString
 
 instance Arbitrary Id where
   arbitrary =
     frequency
     [ (3, NumberId <$> arbitrary)
-    , (2, StringId . T.pack <$> arbitrary)
+    , (2, StringId . T.pack <$> genString)
     ]
 
 instance Arbitrary a => Arbitrary (Request a) where
@@ -90,7 +102,6 @@ instance (Arbitrary e, Arbitrary a) => Arbitrary (Response e a) where
     , (3, Response . Left  <$> arbitrary)
     ]
 
-
 data Example =
   Example
   { p :: Int
@@ -104,8 +115,8 @@ data Example =
 instance Arbitrary Example where
   arbitrary =
     Example
-    <$> arbitrary <*> arbitrary <*> arbitrary
-    <*> arbitrary <*> arbitrary <*> arbitrary
+    <$> arbitrary <*> genString <*> arbitrary
+    <*> arbitrary <*> arbitrary <*> frequency [(1, return Nothing), (3, Just <$> genString)]
 
 instance FromJSON Example where
   parseJSON = genericParseJSONRPC defaultJsonRpcOptions Aeson.defaultOptions
