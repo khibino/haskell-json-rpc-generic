@@ -1,7 +1,7 @@
 
 import qualified Eq
 import qualified Iso
-import Test.QuickCheck.Simple (defaultMain')
+import Test.QuickCheck.Simple (defaultMain_)
 
 main :: IO ()
-main = defaultMain' True $ Eq.tests ++ Iso.tests
+main = defaultMain_ True $ Eq.tests ++ Iso.tests
