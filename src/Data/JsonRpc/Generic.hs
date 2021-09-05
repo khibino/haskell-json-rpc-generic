@@ -12,13 +12,12 @@ module Data.JsonRpc.Generic (
   ) where
 
 import GHC.Generics
-import Control.Applicative ((<$>), pure, (<*>), (<*), empty, (<|>))
+import Control.Applicative ((<$>), (<*>), (<*), empty, (<|>))
 import Control.Monad (guard)
 import Control.Monad.Trans.Class (lift)
 import Control.Monad.Trans.Writer (Writer, runWriter, tell)
 import Control.Monad.Trans.State (StateT, runStateT, get, put)
-import Data.DList (DList)
-import qualified Data.DList as DList
+import Data.Monoid (Endo (..))
 import Data.Set ((\\))
 import qualified Data.Set as Set
 import qualified Data.HashMap.Strict as HashMap
@@ -51,7 +50,7 @@ instance FromJSON a => GFromArrayJSON (K1 i a) where
 
 
 type FieldName = String
-type FieldsW = Writer (DList FieldName)
+type FieldsW = Writer (Endo [FieldName])
 
 class GFieldSetJSON f where
   gFieldSet :: FieldsW (f a)
@@ -84,7 +83,7 @@ saveQueriedField :: (GFieldSetJSON a, Selector s)
                  => S1 s a p
                  -> FieldsW (S1 s a p)
 saveQueriedField m1  =  do
-  tell (pure $ selName m1)
+  tell (Endo (selName m1 :))
   return m1
 
 instance GFieldSetJSON (K1 i a) where
@@ -99,7 +98,7 @@ genericFieldSetParseJSON = d  where
   d rpcOpts opts v@(Object m)  =  do
     let (px, fs)  =  runWriter gFieldSet
         inv  =  Set.fromList (HashMap.keys m) \\
-                Set.fromList (map (T.pack . fieldLabelModifier opts) $ DList.toList fs)
+                Set.fromList (map (T.pack . fieldLabelModifier opts) $ appEndo fs [])
     guard (allowNonExistField rpcOpts || Set.null inv)
       <|> fail ("object has illegal field: " ++ show (Set.toList inv))
     j  <-  genericParseJSON opts v
