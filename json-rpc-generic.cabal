@@ -50,7 +50,6 @@ library
                        , containers
                        , unordered-containers
                        , text
-                       , dlist
                        , scientific
                        , vector >=0.10
                        , aeson >=0.7
