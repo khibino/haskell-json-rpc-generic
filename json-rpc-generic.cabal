@@ -37,16 +37,6 @@ library
   other-modules:
                        Data.JsonRpc.Integral
 
-  other-extensions:
-                       TypeOperators
-                       FlexibleContexts
-                       OverloadedStrings
-                       DeriveFunctor
-                       DeriveFoldable
-                       DeriveTraversable
-                       -- DeriveGeneric  -- compat with Cabal 1.16
-                       StandaloneDeriving
-
   build-depends:         base >=4.6 && <5
                        , transformers
                        , containers
